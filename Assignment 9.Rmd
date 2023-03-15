@@ -1,0 +1,74 @@
+---
+title: "Assignment 9"
+author: "Eva Burguete-Innocente"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Loading libraries
+
+```{r}
+library(doParallel)
+library(parallel)
+library(foreach)
+```
+Detecting the number of cores I have:
+
+```{r}
+detectCores()
+```
+I have 4 cores.
+
+Writing a standard for loop 4000 times, each time calculating the mean of 100,000 random numbers from a normal distribution with a mean of 10 and a standard deviation of 3. I used Sys.time() before and after to calculate the amount of time it took to run the loop.
+
+```{r}
+Sys.time()
+for (i in 1:4000){
+  mean(rnorm(100000,mean=10,sd=3))
+}
+Sys.time()
+```
+
+time before- 8:44:04
+time after-8:44:37
+
+Time it took loop to run: 33 s
+
+Predicting how fast a parallel loop will run. I divided the run time above by the number of cores I have.
+
+```{r}
+print(33/4)
+```
+
+Setting up to run in parallel. I chose to use 3 cores to leave one free. 
+
+```{r}
+
+Cores<-parallel::makeCluster(detectCores()-1)
+
+doParallel::registerDoParallel(Cores)
+
+```
+
+Modifying my for loop to run in parallel and using Sys.time to estimate run time.
+
+
+```{r}
+Sys.time()
+foreach(i=1:4000, .combine=rbind) %dopar%{
+  mean(rnorm(100000,mean=10,sd=3))
+}
+Sys.time() 
+```
+
+8:46:43-8:47:05
+-22 seconds
+
+Deactivating the multithreading.
+
+```{r}
+parallel::stopCluster(Cores)
+```
+
+
+The run time for my serial loop was 33s while the run time for my parallel loop was 23 s. The theoretical run time for my parallel loop was 8.25 s. The theoretical is shorter than the actual run time because I am only using 3 cores to run this (instead of 4), and it takes some time to combine the results, so it won't take exactly the same as the theoretical time. 
